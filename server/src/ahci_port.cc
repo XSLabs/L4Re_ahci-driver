@@ -556,7 +556,7 @@ Ahci_port::process_interrupts()
 
   if (istate & Regs::Port::Is_mask_status)
     {
-      Dbg::warn().printf("Device state changed.\n");
+      Dbg::warn().printf("Device state changed (istate=%x).\n", istate);
       // state changed: clear interrupts
       _regs[Regs::Port::Is] = istate & Regs::Port::Is_mask_status;
       // TODO Restart the device detection cycle here.
