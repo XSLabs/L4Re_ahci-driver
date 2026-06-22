@@ -23,6 +23,35 @@ static configuration is given priority over dynamically connecting clients and
 configured while the service starts. Dynamic clients can connect and disconnect
 during runtime of the AHCI driver.
 
+### Building and Configuration {#l4re_servers_ahci_driver_build_and_config}
+
+The AHCI driver can be built using the L4Re build system. Just place this
+project into your `pkg` directory. The resulting binary is called `ahci-drv`
+
+### Starting the service {#l4re_servers_ahci_driver_starting}
+
+The AHCI driver can be started with Lua like this:
+
+```lua
+local ahci_bus = L4.default_loader:new_channel();
+L4.default_loader:start({
+  caps = {
+    vbus = vbus_ahci,
+    svr = ahci_bus:svr(),
+  },
+},
+"rom/ahci-drv");
+```
+
+First an IPC gate (`ahci_bus`) is created which is used between the AHCI driver
+and a client to request access to a particular disk or partition. The
+server-side is assigned to the optional `svr` capability of the AHCI driver. See
+the section below on how to configure access to a disk or partition.
+
+The ahci driver needs access to a virtual bus capability (`vbus`). On the
+virtual bus the AHCI driver searches for AHCI 1.0 compliant storage controllers.
+Please see io's documentation about how to setup a virtual bus.
+
 
 <hr>
 ## Capabilities {#l4re_servers_ahci_driver_capabilities}
@@ -49,9 +78,9 @@ during runtime of the AHCI driver.
 <hr>
 ## Command Line Options {#l4re_servers_ahci_driver_cmdline_options}
 
-In the example above the ahci driver is started in its default configuration. To
-customize the configuration of the ahci-driver it accepts the following command
-line options:
+In the [Starting the service](#l4re_servers_ahci_driver_starting) example above
+the ahci-driver is started in its default configuration. To customize the
+configuration of the ahci-driver it accepts the following command line options:
 
 * `-A`, `--check-address`
 
@@ -141,44 +170,14 @@ line options:
 
   Flag. True if provided.
 
-<hr>
-## Building and Configuration
-
-The AHCI driver can be built using the L4Re build system. Just place this
-project into your `pkg` directory. The resulting binary is called `ahci-drv`
-
-## Starting the service
-
-The AHCI driver can be started with Lua like this:
-
-```lua
-local ahci_bus = L4.default_loader:new_channel();
-L4.default_loader:start({
-  caps = {
-    vbus = vbus_ahci,
-    svr = ahci_bus:svr(),
-  },
-},
-"rom/ahci-drv");
-```
-
-First an IPC gate (`ahci_bus`) is created which is used between the AHCI driver
-and a client to request access to a particular disk or partition. The server-
-side is assigned to the optional `svr` capability of the AHCI driver. See the
-section below on how to configure access to a disk or partition.
-
-The ahci driver needs access to a virtual bus capability (`vbus`). On the
-virtual bus the AHCI driver searches for AHCI 1.0 compliant storage controllers.
-Please see io's documentation about how to setup a virtual bus.
-
 ## Virtio block host {#l4re_servers_ahci_driver_param_virtio_block_host}
 
 Prior to connecting a client to a virtual block session it has to be created
 using the following Lua function. It has to be called on the client side of the
 IPC gate capability whose server side is bound to the ahci driver.
 
-Call:   `create(0, "device=<<SN> | <SN>:<PARTNUM> | [partuuid:]<UUID> |
-[partlabel:]<LABEL>>" [, "ds-max=<max>", "slot-max=<max>", "read-only"])`
+Call:
+`create(0, "device=<<SN> | <SN>:<PARTNUM> | [partuuid:]<UUID> | [partlabel:]<LABEL>>" [, "ds-max=<max>", "slot-max=<max>", "read-only"])`
 
 * `"device=<<SN> | <SN>:<PARTNUM> | [partuuid:]<UUID> | [partlabel:]<LABEL>>"`
 
@@ -231,51 +230,46 @@ AHCI driver using the Virtio block protocol.
 A couple of examples on how to request different disks or partitions are listed
 below.
 
-* Request entire disk with the given serial number
+* **Request entire disk with the given serial number**
 
-Assume the AHCI server reported the following SN number (running in QEMU):
+  Assume the AHCI server reported the following SN number (running in QEMU):
+  ```
+  Serial number: <QM00005             >
+  ```
 
-```
-Serial number: <QM00005             >
-```
+  A client can connect to this disk via:
+  ```lua
+  vda = ahci_bus:create(0, "ds-max=5", "device=QM00005")
+  ```
 
-A client can connect to this disk via:
+* **Request a partition using a partition number**
 
-```lua
-vda = ahci_bus:create(0, "ds-max=5", "device=QM00005")
-```
+  Assume the AHCI server reported the following SN number (running in QEMU):
+  ```
+  Serial number: <QM00005             >
+  ```
 
-* Request a partition using a partition number
+  A client can connect to partition 2 on this device like this:
+  ```lua
+  vda = ahci_bus:create(0, "ds-max=5", "device=QM00005:2")
+  ```
 
-Assume the AHCI server reported the following SN number (running in QEMU):
+* **Request a partition with the given UUID**
 
-```
-Serial number: <QM00005             >
-```
+  ```lua
+  vda = ahci_bus:create(0, "ds-max=5", "device=88E59675-4DC8-469A-98E4-B7B021DC7FBE")
+  ```
 
-A client can connect to partition 2 on this device like this:
+* **Request a partition using a label**
 
-```lua
-vda = ahci_bus:create(0, "ds-max=5", "device=QM00005:2"
-```
+  Assume there is a partition with label 'foobar'. A client can connect to it
+  using the following snippet:
+  ```lua
+  vda = ahci_bus:create(0, "ds-max=5", "device=partlabel:foobar")
+  ```
 
-* Request a partition with the given UUID
-
-```lua
-vda = ahci_bus:create(0, "ds-max=5", "device=88E59675-4DC8-469A-98E4-B7B021DC7FBE")
-```
-
-* Request a partition using a label
-
-Assume there is a partition with label 'foobar'. A client can connect to it
-using the following snippet:
-
-```lua
-vda = ahci_bus:create(0, "ds-max=5", "device=partlabel:foobar")
-```
-
-* A more elaborate example with a static client. The client uses the client side
-of the `ahci_cl1` capability to communicate with the AHCI driver.
+* **More elaborate example with a static client.** The client uses the client
+side of the `ahci_cl1` capability to communicate with the AHCI driver.
 
   ```lua
   local ahci_cl1 = L4.default_loader:new_channel();
