@@ -79,10 +79,11 @@ cmds:
       - name: 'client'
         metavar: 'cap_name'
         desc: Connect a static client.
-        type: cap
-        cap-name: 'client'
+        type: str
+        side-effects:
+          - type: 'expect-cap'
+            name: 'client'
         multiple: true
-        needs-server-right: true
       - name: 'device'
         metavar: '<SN> | <SN>:<PARTNUM> | [partuuid:]<UUID> | [partlabel:]<LABEL>'
         desc: |

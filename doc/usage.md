@@ -66,8 +66,8 @@ Please see io's documentation about how to setup a virtual bus.
 
   Static client
 
-  Multiple capability names can be provided by the `--client` command line
-  parameter.
+  Needs server right. Multiple capability names can be provided by the
+  `--client <cap_name>` command line parameter.
 
 * `svr`
 
@@ -110,8 +110,11 @@ configuration of the ahci-driver it accepts the following command line options:
 
   Can be used multiple times.
 
-  Name of a provided capability with server rights that adheres to the ipc
-  protocol.
+  This command has the following side effects:
+  - A capability with the given name is expected in the capability space of this
+  task.
+
+  String value.
 
   This parameter opens a scope for the following subparameters:
 
