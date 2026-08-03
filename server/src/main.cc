@@ -307,7 +307,14 @@ parse_args(int argc, char *const *argv)
     {
       int opt = getopt_long(argc, argv, "vqA", loptions, NULL);
       if (opt == -1)
-        break;
+        {
+          if (optind < argc)
+            {
+              Err().printf("Unknown parameter '%s'\n", argv[optind]);
+              return -1;
+            }
+          break;
+        }
 
       switch (opt)
         {
@@ -330,7 +337,7 @@ parse_args(int argc, char *const *argv)
         case OPT_DEVICE:
           if (Blk_mgr::parse_device_name(optarg, opts.device) < 0)
             {
-              Dbg::warn().printf("Invalid device name parameter.\n");
+              Err().printf("Invalid device name parameter.\n");
               return -1;
             }
           break;
@@ -350,12 +357,19 @@ parse_args(int argc, char *const *argv)
           Ahci::Hba::use_msixs = false;
           break;
         default:
-          Dbg::warn().printf(usage_str, argv[0]);
-          return -1;
+          {
+            if (opt == ':')
+              Err().printf("Required argument missing to option '%s'.\n",
+                           argv[optind - 1]);
+            else if (opt == '?')
+              Err().printf("Unrecognized option '%s'.\n", argv[optind - 1]);
+            return -1;
+          }
         }
     }
 
   if (!opts.add_client(&drv))
+    // add_client prints error messages itself
     return 1;
 
   Dbg::set_level(debug_level);
@@ -488,9 +502,12 @@ main(int argc, char *const *argv)
 {
   Dbg::set_level(3);
 
-  int arg_idx = parse_args(argc, argv);
-  if (arg_idx < 0)
-    return arg_idx;
+  if (parse_args(argc, argv) < 0)
+    {
+      Err().printf("Error during command line argument parsing.\n");
+      Err().printf(usage_str, argv[0]);
+      return EXIT_FAILURE;
+    }
 
   Dbg::info().printf("AHCI driver says hello.\n");
 
