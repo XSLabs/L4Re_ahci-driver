@@ -173,7 +173,11 @@ configuration of the ahci-driver it accepts the following command line options:
 
   Flag. True if provided.
 
-## Virtio block host {#l4re_servers_ahci_driver_param_virtio_block_host}
+
+<hr>
+## Factory Options {#l4re_servers_ahci_driver_factory_options}
+
+### Virtio block host {#l4re_servers_ahci_driver_param_virtio_block_host}
 
 Prior to connecting a client to a virtual block session it has to be created
 using the following Lua function. It has to be called on the client side of the
