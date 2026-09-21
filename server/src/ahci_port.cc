@@ -85,6 +85,12 @@ Command_slot::setup_data(Fis::Datablock const &data, l4_uint32_t sector_size)
       if (i >= Command_table::Max_entries)
         return -L4_EINVAL;
 
+      // The PRD byte count is encoded as 'size - 1' (see below), so an empty
+      // block would ask the HBA for a transfer of the maximum size the field
+      // can express.
+      if (block->num_sectors == 0)
+        return -L4_EINVAL;
+
       _cmd_table->prd[i].dba = block->dma_addr;
       if (sizeof(l4_addr_t) == 8)
         _cmd_table->prd[i].dbau = (l4_uint64_t) block->dma_addr >> 32;
