@@ -597,9 +597,14 @@ Ahci_port::handle_error()
 
   if (is_started())
     {
-      // If the port is still active, abort the failing task
-      // and try to safe the rest.
-      _slots[current_command_slot()].abort();
+      // If the port is still active, abort the failing task and try to safe the
+      // rest. The slot number comes from the hardware and the port may
+      // implement fewer slots than the field can express.
+      unsigned slot = current_command_slot();
+      if (slot < _slots.size())
+        _slots[current_command_slot()].abort();
+      else
+        Dbg::warn().printf("Current command slot %u out of range.\n", slot);
 
       check_pending_commands();
     }
