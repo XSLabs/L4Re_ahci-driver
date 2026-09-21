@@ -156,7 +156,8 @@ public:
                       part->set_max_in_flight(max_slots);
                     else
                       if (max_slots)
-                        Dbg::warn("slot-max parameter ignored for full disk access.\n");
+                        Dbg::warn().printf(
+                          "slot-max parameter ignored for full disk access.\n");
                   });
     if (ret >= 0)
       {
@@ -251,7 +252,8 @@ struct Client_opts
                 part->set_max_in_flight(mx);
               else
                 if (mx)
-                  Dbg::warn("slot-max parameter ignored for full disk access.\n");
+                  Dbg::warn().printf(
+                    "slot-max parameter ignored for full disk access.\n");
             });
       }
 
