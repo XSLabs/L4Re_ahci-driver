@@ -136,7 +136,8 @@ Ahci::Ahci_device::inout_data(l4_uint64_t sector,
 
   if (_devinfo.features.lba48)
     {
-      if (numsec <= 0 || numsec > 65536 || sector > ((l4_uint64_t)1 << 48))
+      if (numsec == 0 || numsec > 65536
+          || sector + numsec > (l4_uint64_t{1} << 48))
         {
           Err().printf("Client error: sector number out of range.\n");
           return -L4_EINVAL;
@@ -147,7 +148,7 @@ Ahci::Ahci_device::inout_data(l4_uint64_t sector,
     }
   else
     {
-      if (numsec <= 0 || numsec > 256 || sector > (1 << 28))
+      if (numsec == 0 || numsec > 256 || sector + numsec > (1 << 28))
         {
           Err().printf("Client error: invalid sector number\n");
           return -L4_EINVAL;
