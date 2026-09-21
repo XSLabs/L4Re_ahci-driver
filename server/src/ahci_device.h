@@ -10,6 +10,7 @@
 
 #include "ahci_port.h"
 
+#include <l4/cxx/minmax>
 #include <l4/libblock-device/device.h>
 
 namespace Ahci {
@@ -105,7 +106,19 @@ public:
   { return _devinfo.sector_size; }
 
   l4_size_t max_size() const override
-  { return 0x400000; }
+  {
+    // The PRD byte count field is 22 bits wide.
+    l4_size_t max_size = 0x400000;
+
+    // A client may chain up to max_segments() segments of max_size() bytes into
+    // a single request, but the sector count of one ATA command is limited to
+    // 65536 (LBA48) respectively 256 (LBA28) sectors. Keep the advertised
+    // limits below what inout_data() is able to issue.
+    l4_size_t max_sectors = _devinfo.features.lba48 ? 65536 : 256;
+    l4_size_t per_segment = max_sectors * _devinfo.sector_size / max_segments();
+    per_segment -= per_segment % _devinfo.sector_size;
+    return cxx::min(max_size, per_segment);
+  }
 
   unsigned max_segments() const override
   { return Command_table::Max_entries; }
