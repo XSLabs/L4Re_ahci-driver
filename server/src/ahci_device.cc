@@ -207,7 +207,11 @@ int
 Ahci::Ahci_device::flush(Block_device::Inout_callback const &cb)
 {
   // TODO: flush the internal caches before completing the FLUSH
-  cb(0, 0);
+
+  Block_device::Inout_callback callback = cb; // capture a copy
+
+  // The callback must not run before this function has returned!
+  Errand::schedule([callback]() { callback(0, 0); }, 0);
   return L4_EOK;
 }
 
