@@ -181,19 +181,19 @@ enum Command_header_flags
 struct Taskfile
 {
   // command info
-  l4_uint64_t lba; // 48bits, actually
-  l4_uint16_t features;
-  l4_uint16_t count;
-  l4_uint8_t device;
-  l4_uint8_t command;
-  l4_uint8_t icc; // time limit
-  l4_uint8_t control;
+  l4_uint64_t lba = 0; // 48bits, actually
+  l4_uint16_t features = 0;
+  l4_uint16_t count = 0;
+  l4_uint8_t device = 0;
+  l4_uint8_t command = 0;
+  l4_uint8_t icc = 0; // time limit
+  l4_uint8_t control = 0;
 
-  unsigned flags;
+  unsigned flags = 0;
 
   // data
-  Block_device::Inout_block const *data;
-  l4_size_t sector_size;
+  Block_device::Inout_block const *data = nullptr;
+  l4_size_t sector_size = 0;
 };
 
 } // namespace Fis
