@@ -537,7 +537,12 @@ Ahci_port::send_command(Fis::Taskfile const &task, Fis::Callback const &cb,
             {
               // TODO If the mode is enabling, should we wait?
               trace.printf("Device not ready for serving slot %d.\n", slot);
-              _slots[slot].abort();
+              // Release the slot without running the callback and report the
+              // error to the caller, which fails the request. Aborting the slot
+              // here would run the callback from within this function and still
+              // return the slot number, i.e. success.
+              s.release();
+              return -L4_EIO;
             }
 
           return slot;
