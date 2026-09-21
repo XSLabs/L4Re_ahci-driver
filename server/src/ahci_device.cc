@@ -132,7 +132,18 @@ Ahci::Ahci_device::inout_data(l4_uint64_t sector,
 {
   l4_size_t numsec = 0;
   for (auto const *block = &blocks; block; block = block->next.get())
-    numsec += block->num_sectors;
+    {
+      // CAP.S64A governs the width of the addresses the HBA puts on the bus, so
+      // it has to be checked against the DMA addresses of the payload.
+      if (!_devinfo.features.s64a)
+        if (block->dma_addr >> 32)
+          {
+            Err().printf("64-bit DMA address on a 32-bit-only device.\n");
+            return -L4_EINVAL;
+          }
+
+      numsec += block->num_sectors;
+    }
 
   if (_devinfo.features.lba48)
     {
@@ -150,20 +161,12 @@ Ahci::Ahci_device::inout_data(l4_uint64_t sector,
     {
       if (numsec == 0 || numsec > 256 || sector + numsec > (1 << 28))
         {
-          Err().printf("Client error: invalid sector number\n");
+          Err().printf("Client error: invalid sector number.\n");
           return -L4_EINVAL;
         }
 
       if (numsec == 256)
         numsec = 0;
-    }
-
-  // check that 32bit devices get only 32bit addresses
-  if ((sizeof(l4_addr_t) == 8) && !_devinfo.features.s64a
-      && (sector >= 0x100000000L))
-    {
-      Err().printf("Client error: 64bit address for 32bit device\n");
-      return -L4_EINVAL;
     }
 
   Fis::Taskfile task;
