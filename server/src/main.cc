@@ -332,7 +332,7 @@ parse_args(int argc, char *const *argv)
           break;
         case OPT_CLIENT:
           if (!opts.add_client(&drv))
-            return 1;
+            return -1;
           opts = Client_opts();
           opts.capname = optarg;
           break;
@@ -377,7 +377,7 @@ parse_args(int argc, char *const *argv)
 
   if (!opts.add_client(&drv))
     // add_client prints error messages itself
-    return 1;
+    return -1;
 
   Dbg::set_level(debug_level);
   return optind;
