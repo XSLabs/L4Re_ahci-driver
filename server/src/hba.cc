@@ -188,6 +188,10 @@ Hba::handle_irq()
       is >>= 1;
     }
 
+  // Clear all status bits before unmasking, otherwise a level-triggered
+  // interrupt line fires again immediately.
+  _regs[Regs::Hba::Is] = is_clear;
+
   if (!_irq_trigger_type)
     {
       if (_unmask_via_icu)
@@ -195,10 +199,6 @@ Hba::handle_irq()
       else
         obj_cap()->unmask();
     }
-
-
-  // clear all status bits
-  _regs[Regs::Hba::Is] = is_clear;
 }
 
 L4::Cap<L4::Irq>
