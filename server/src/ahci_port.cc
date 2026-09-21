@@ -80,10 +80,11 @@ Command_slot::setup_data(Fis::Datablock const &data, l4_uint32_t sector_size)
 #endif
 
   unsigned i = 0;
-  for (Fis::Datablock const *block = &data;
-       block && i < Command_table::Max_entries;
-       ++i, block = block->next.get())
+  for (Fis::Datablock const *block = &data; block; ++i, block = block->next.get())
     {
+      if (i >= Command_table::Max_entries)
+        return -L4_EINVAL;
+
       _cmd_table->prd[i].dba = block->dma_addr;
       if (sizeof(l4_addr_t) == 8)
         _cmd_table->prd[i].dbau = (l4_uint64_t) block->dma_addr >> 32;
