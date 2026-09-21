@@ -63,8 +63,8 @@ Command_slot::setup_command(Fis::Taskfile const &task, Fis::Callback const &cb,
   _cmd_header->cfl() = 5;
   _cmd_header->prdbc = 0;
   _cmd_header->ctba0 = _cmd_table_pa;
-  if (sizeof(_cmd_table_pa) == 8)
-    _cmd_header->ctba0_u0 = (l4_uint64_t) _cmd_table_pa >> 32;
+  _cmd_header->ctba0_u0 = (sizeof(_cmd_table_pa) == 8)
+                          ? static_cast<l4_uint32_t>(_cmd_table_pa >> 32) : 0;
 
   // save client info
   _callback = cb;
@@ -92,10 +92,9 @@ Command_slot::setup_data(Fis::Datablock const &data, l4_uint32_t sector_size)
         return -L4_EINVAL;
 
       _cmd_table->prd[i].dba = block->dma_addr;
-      if (sizeof(l4_addr_t) == 8)
-        _cmd_table->prd[i].dbau = (l4_uint64_t) block->dma_addr >> 32;
-      else
-        _cmd_table->prd[i].dbau = 0;
+      _cmd_table->prd[i].dbau =
+        (sizeof(l4_addr_t) == 8)
+        ? static_cast<l4_uint32_t>(block->dma_addr >> 32) : 0;
       _cmd_table->prd[i].dbc = (block->num_sectors * sector_size) - 1;
       // TODO: cache: make sure client data is flushed
     }
@@ -179,13 +178,13 @@ Ahci_port::initialize_memory(unsigned maxslots)
   l4_addr_t addr = _cmddata_paddr + offsetof(Command_data, headers);
   _regs[Regs::Port::Clb] = addr;
   _regs[Regs::Port::Clbu] = (sizeof(l4_addr_t) == 8)
-                            ? ((l4_uint64_t) addr >> 32) : 0;
+                            ? static_cast<l4_uint32_t>(addr >> 32) : 0;
 
   // setup FIS receive region
   addr = _cmddata_paddr + offsetof(Command_data, fis);
   _regs[Regs::Port::Fb] = addr;
   _regs[Regs::Port::Fbu] = (sizeof(l4_addr_t) == 8)
-                           ? ((l4_uint64_t) addr >> 32) : 0;
+                           ? static_cast<l4_uint32_t>(addr >> 32) : 0;
 
   // enable FIS buffer
   _regs[Regs::Port::Cmd].set(Regs::Port::Cmd_fre);
